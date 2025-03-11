@@ -97,10 +97,10 @@ std::vector<std::vector<int>> solve(Data &data)
     std::bitset<MAX_VERTICES> visited_overall;
     unsigned long long total_length = 0;
 
-    int timeout_minutes = 1;
+    std::array<int, MAX_CARS> timeout_times = {3, 3, 3, 4, 4, 4, 5, 6};
     for (int car_index = 0; car_index < data.nr_cars; ++car_index)
     {
-        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, timeout_minutes);
+        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, timeout_times[car_index]);
 
         std::cout << "Obtained a path of length " << path_length << " for car " << car_index << '\n';
 

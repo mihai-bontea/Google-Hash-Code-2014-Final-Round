@@ -3,6 +3,7 @@
 #include <array>
 
 #define MAX_VERTICES 11348
+#define MAX_CARS 8
 
 struct Edge
 {
