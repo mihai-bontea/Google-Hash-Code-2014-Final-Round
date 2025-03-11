@@ -1,10 +1,11 @@
 #include <iostream>
 #include <vector>
 #include <stack>
-
+#include <cassert>
 #include <algorithm>
 #include <random>
 #include <bitset>
+#include <chrono>
 
 
 
@@ -26,9 +27,6 @@ struct PathDescription
     }
 };
 
-std::vector<int> best_path;
-int best_length;
-
 void randomize(std::vector<int>& elems)
 {
     std::random_device rd;
@@ -36,26 +34,28 @@ void randomize(std::vector<int>& elems)
     std::shuffle(elems.begin(), elems.end(), g);
 }
 
-std::vector<int> backtrack(Data &data)
+std::tuple<int, std::vector<int>, std::bitset<MAX_VERTICES>> modified_dijsktra(Data &data, std::bitset<MAX_VERTICES>& visited_overall, int timeout_minutes)
 {
-    std::stack<PathDescription> stack;
-    stack.emplace(data.starting_junction, 0, 0, std::vector{data.starting_junction}, std::bitset<MAX_VERTICES>());
+    std::vector<int> best_path;
+    int best_path_length = 0, best_path_cost = 0;
+    std::bitset<MAX_VERTICES> best_path_visited;
 
-    bool timer = true;
-    while (!stack.empty() && timer)
+    std::stack<PathDescription> stack;
+    stack.emplace(data.starting_junction, 0, 0, std::vector{data.starting_junction}, visited_overall);
+
+    auto start_time = std::chrono::steady_clock::now();
+    while (!stack.empty())
     {
         const auto& [current_node, cost, length, path, visited] = stack.top();
         stack.pop();
 
-        if (length > best_length)
+        if (length > best_path_length)
         {
-            best_length = length;
+            best_path_length = length;
+            best_path_cost = cost;
             best_path = path;
+            best_path_visited = visited;
         }
-
-        // Maybe randomize, if threaded will fit into RAM
-//        auto adjacency_list = graph.get(current_node);
-//        randomize(adjacency_list);
 
         for (auto [neighbor, edge_cost, edge_length] : data.adjacency[current_node])
         {
@@ -73,8 +73,40 @@ std::vector<int> backtrack(Data &data)
                 stack.emplace(neighbor, new_cost, new_length, path_copy, visited_copy);
             }
         }
+
+        auto elapsed = std::chrono::steady_clock::now() - start_time;
+        if (std::chrono::duration_cast<std::chrono::minutes>(elapsed).count() >= timeout_minutes)
+        {
+            std::cout << "Timeout reached! Stopping..." << std::endl;
+            break;
+        }
     }
-    return best_path;
+
+    assert(best_path_cost <= data.total_time);
+    return {best_path_length, best_path, best_path_visited};
+}
+
+std::vector<std::vector<int>> solve(Data &data)
+{
+    std::vector<std::vector<int>> car_paths;
+    std::bitset<MAX_VERTICES> visited_overall;
+    unsigned long long total_length = 0;
+
+    int timeout_minutes = 1;
+    for (int car_index = 0; car_index < data.nr_cars; ++car_index)
+    {
+        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, timeout_minutes);
+
+        std::cout << "Obtained a path of length " << path_length << " for car " << car_index << '\n';
+
+        // Updating the visited nodes(junctions)
+        visited_overall |= visited;
+
+        total_length += path_length;
+
+        car_paths.push_back(path);
+    }
+    return car_paths;
 }
 
 int main()
@@ -84,6 +116,6 @@ int main()
 
     std::cout << "Read data, we got " << data.nr_junctions << " " << data.nr_streets << std::endl;
 
-    auto result = backtrack(data);
+    auto result = solve(data);
     return 0;
 }
