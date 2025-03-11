@@ -42,4 +42,19 @@ struct Data
                 adjacency[node_b].emplace_back(node_a, cost, length);
         }
     }
+
+    static void write_to_file(const std::string& filename, const std::vector<std::vector<int>>& car_paths)
+    {
+        std::ofstream fout(filename);
+
+        // Number of cars used
+        fout << car_paths.size() << '\n';
+        for (const auto& car : car_paths)
+        {
+            // Number of junctions visited by car
+            fout << car.size() << '\n';
+            for (int junction : car)
+                fout << junction << '\n';
+        }
+    }
 };
