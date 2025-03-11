@@ -1,15 +1,15 @@
-#include <iostream>
-#include <vector>
-#include <stack>
-#include <cassert>
-#include <algorithm>
-#include <random>
 #include <bitset>
 #include <chrono>
-
-
+#include <cassert>
+#include <vector>
+#include <stack>
+#include <random>
+#include <iostream>
+#include <algorithm>
 
 #include "Data.h"
+
+typedef std::tuple<int, std::vector<int>, std::bitset<MAX_VERTICES>> dijsktra_result;
 
 struct PathDescription
 {
@@ -17,14 +17,17 @@ struct PathDescription
     std::vector<int> path;
     std::bitset<MAX_VERTICES> visited;
 
-    PathDescription(int current_node, int cost, int length, const std::vector<int>& path, const std::bitset<MAX_VERTICES>& visited)
+    PathDescription(int current_node,
+                    int cost,
+                    int length,
+                    const std::vector<int>& path,
+                    const std::bitset<MAX_VERTICES>& visited)
         : current_node(current_node)
         , cost(cost)
         , length(length)
         , path(path)
         , visited(visited)
-    {
-    }
+    {}
 };
 
 void randomize(std::vector<int>& elems)
@@ -34,7 +37,9 @@ void randomize(std::vector<int>& elems)
     std::shuffle(elems.begin(), elems.end(), g);
 }
 
-std::tuple<int, std::vector<int>, std::bitset<MAX_VERTICES>> modified_dijsktra(Data &data, std::bitset<MAX_VERTICES>& visited_overall, int timeout_minutes)
+dijsktra_result modified_dijsktra(Data &data,
+                                  std::bitset<MAX_VERTICES>& visited_overall,
+                                  int timeout_minutes)
 {
     std::vector<int> best_path;
     int best_path_length = 0, best_path_cost = 0;
@@ -106,6 +111,7 @@ std::vector<std::vector<int>> solve(Data &data)
 
         car_paths.push_back(path);
     }
+    std::cout << "Total score is " << total_length << '\n';
     return car_paths;
 }
 

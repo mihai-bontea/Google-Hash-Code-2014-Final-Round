@@ -12,8 +12,7 @@ struct Edge
         : neighbor(neighbor)
         , cost(cost)
         , length(length)
-    {
-    }
+    {}
 };
 
 struct Data
@@ -35,7 +34,7 @@ struct Data
         int node_a, node_b, type, cost, length;
         for (int index = 0; index < nr_streets; ++index)
         {
-            fin >>node_a >> node_b >> type >> cost >> length;
+            fin >> node_a >> node_b >> type >> cost >> length;
 
             adjacency[node_a].emplace_back(node_b, cost, length);
             if (type == 2)
