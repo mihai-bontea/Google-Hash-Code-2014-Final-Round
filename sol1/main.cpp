@@ -3,6 +3,7 @@
 #include <cassert>
 #include <vector>
 #include <stack>
+#include <queue>
 #include <random>
 #include <iostream>
 #include <algorithm>
@@ -28,6 +29,11 @@ struct PathDescription
         , path(path)
         , visited(visited)
     {}
+
+    bool operator<(const PathDescription& other) const
+    {
+        return length < other.length;
+    }
 };
 
 void randomize(std::vector<int>& elems)
@@ -45,14 +51,15 @@ dijsktra_result modified_dijsktra(Data &data,
     int best_path_length = 0, best_path_cost = 0;
     std::bitset<MAX_VERTICES> best_path_visited;
 
-    std::stack<PathDescription> stack;
-    stack.emplace(data.starting_junction, 0, 0, std::vector{data.starting_junction}, visited_overall);
+    std::priority_queue<PathDescription> pqueue;
+
+    pqueue.emplace(data.starting_junction, 0, 0, std::vector{data.starting_junction}, visited_overall);
 
     auto start_time = std::chrono::steady_clock::now();
-    while (!stack.empty())
+    while (!pqueue.empty())
     {
-        const auto& [current_node, cost, length, path, visited] = stack.top();
-        stack.pop();
+        const auto& [current_node, cost, length, path, visited] = pqueue.top();
+        pqueue.pop();
 
         if (length > best_path_length)
         {
@@ -75,7 +82,7 @@ dijsktra_result modified_dijsktra(Data &data,
                 auto visited_copy = visited;
                 visited_copy[neighbor] = true;
 
-                stack.emplace(neighbor, new_cost, new_length, path_copy, visited_copy);
+                pqueue.emplace(neighbor, new_cost, new_length, path_copy, visited_copy);
             }
         }
 
@@ -97,10 +104,10 @@ std::vector<std::vector<int>> solve(Data &data)
     std::bitset<MAX_VERTICES> visited_overall;
     unsigned long long total_length = 0;
 
-    std::array<int, MAX_CARS> timeout_times = {3, 3, 3, 4, 4, 4, 5, 6};
+//    std::array<int, MAX_CARS> timeout_times = {3, 3, 3, 4, 4, 4, 5, 6};
     for (int car_index = 0; car_index < data.nr_cars; ++car_index)
     {
-        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, timeout_times[car_index]);
+        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, 1);
 
         std::cout << "Obtained a path of length " << path_length << " for car " << car_index << '\n';
 
