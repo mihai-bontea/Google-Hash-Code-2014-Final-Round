@@ -6,7 +6,9 @@
 #include <random>
 #include <bitset>
 
-#define MAX_VERTICES 11348
+
+
+#include "Data.h"
 
 struct PathDescription
 {
@@ -34,10 +36,10 @@ void randomize(std::vector<int>& elems)
     std::shuffle(elems.begin(), elems.end(), g);
 }
 
-std::vector<int> backtrack(int start_node, int max_cost)
+std::vector<int> backtrack(Data &data)
 {
     std::stack<PathDescription> stack;
-    stack.emplace(start_node, 0, 0, std::vector{start_node});
+    stack.emplace(data.starting_junction, 0, 0, std::vector{data.starting_junction}, std::bitset<MAX_VERTICES>());
 
     bool timer = true;
     while (!stack.empty() && timer)
@@ -52,29 +54,36 @@ std::vector<int> backtrack(int start_node, int max_cost)
         }
 
         // Maybe randomize, if threaded will fit into RAM
-        auto adjacency_list = graph.get(current_node);
-        randomize(adjacency_list);
+//        auto adjacency_list = graph.get(current_node);
+//        randomize(adjacency_list);
 
-        for (auto& [neighbor, edge_length, edge_cost] : adjacency_list)   // TODO
+        for (auto [neighbor, edge_cost, edge_length] : data.adjacency[current_node])
         {
             int new_cost = cost + edge_cost;
-            int new_length = length + (visited[neighbor])? 0 : edge_length;
+            int new_length = length + ((visited[neighbor])? 0 : edge_length);
 
-            if (new_cost <= max_cost)
+            if (new_cost <= data.total_time)
             {
                 auto path_copy = path;
-                path.push_back(neighbor);
+                path_copy.push_back(neighbor);
 
                 auto visited_copy = visited;
-                visited[neighbor] = true;
+                visited_copy[neighbor] = true;
 
                 stack.emplace(neighbor, new_cost, new_length, path_copy, visited_copy);
             }
         }
     }
+    return best_path;
 }
 
-int main() {
-    std::cout << "Hello, World!" << std::endl;
+int main()
+{
+    const std::string input_filename = "../../hashcode_2014_final_round.in";
+    Data data(input_filename);
+
+    std::cout << "Read data, we got " << data.nr_junctions << " " << data.nr_streets << std::endl;
+
+    auto result = backtrack(data);
     return 0;
 }
