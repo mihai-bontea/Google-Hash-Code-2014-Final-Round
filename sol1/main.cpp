@@ -106,23 +106,20 @@ std::vector<std::vector<int>> solve(Data &data)
     visited_overall[data.starting_junction] = true;
     unsigned long long total_length = 0;
 
-//    std::array<int, MAX_CARS> timeout_times = {3, 3, 3, 4, 4, 4, 5, 6};
+    std::array<int, MAX_CARS> timeout_minutes = {3, 3, 3, 4, 4, 4, 5, 6};
     for (int car_index = 0; car_index < data.nr_cars; ++car_index)
     {
-        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, 1);
+        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, timeout_minutes[car_index]);
 
         std::cout << "Obtained a path of length " << path_length << " for car " << car_index << '\n';
 
         // Updating the visited nodes(junctions)
         visited_overall |= visited;
 
-        std::cout << "Elems in path: " << path.size() << std::endl;
-        for (int junction : path)
-            assert(visited_overall[junction] == true);
-
         total_length += path_length;
 
-        car_paths.push_back(path);
+        if (!path.empty())
+            car_paths.push_back(path);
     }
     std::cout << "Total score is " << total_length << '\n';
     return car_paths;

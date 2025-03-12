@@ -29,10 +29,16 @@ with open(input_file, "r") as in_file:
             for junction_index in range(nr_junctions_visited - 1):
                 node_a = junctions_visited[junction_index]
                 node_b = junctions_visited[junction_index + 1]
+                # Order junctions lexicographically to get rid of duplicates
+                if (node_a, node_b) in streets and (node_b, node_a) in streets:
+                    node_a, node_b = (node_b, node_a) if node_a > node_b else (node_a, node_b)
                 streets_visited.add((node_a, node_b))
     
     # The total score is the sum of unique streets' length
-    score = sum(length for _, length in streets.values())
+    score = 0
+    for street in streets_visited:
+        score += streets[street][1]
+
     print(f"Total score: {score}")
     
 
