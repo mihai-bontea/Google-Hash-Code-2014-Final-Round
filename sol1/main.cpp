@@ -1,4 +1,3 @@
-#include <bitset>
 #include <chrono>
 #include <cassert>
 #include <vector>
@@ -7,22 +6,23 @@
 #include <random>
 #include <iostream>
 #include <algorithm>
+#include <set>
 
 #include "Data.h"
 
-typedef std::tuple<int, std::vector<int>, std::bitset<MAX_VERTICES>> dijsktra_result;
+typedef std::tuple<int, std::vector<int>, std::set<std::pair<int, int>>> dijsktra_result;
 
 struct PathDescription
 {
     int current_node, cost, length;
     std::vector<int> path;
-    std::bitset<MAX_VERTICES> visited;
+    std::set<std::pair<int, int>> visited;
 
     PathDescription(int current_node,
                     int cost,
                     int length,
                     const std::vector<int>& path,
-                    const std::bitset<MAX_VERTICES>& visited)
+                    const std::set<std::pair<int, int>>& visited)
         : current_node(current_node)
         , cost(cost)
         , length(length)
@@ -43,13 +43,15 @@ void randomize(std::vector<int>& elems)
     std::shuffle(elems.begin(), elems.end(), g);
 }
 
+
+
 dijsktra_result modified_dijsktra(Data &data,
-                                  std::bitset<MAX_VERTICES>& visited_overall,
+                                  std::set<std::pair<int, int>>& visited_overall,
                                   int timeout_minutes)
 {
     std::vector<int> best_path;
     int best_path_length = 0, best_path_cost = 0;
-    std::bitset<MAX_VERTICES> best_path_visited;
+    std::set<std::pair<int, int>> best_path_visited;
 
     std::priority_queue<PathDescription> pqueue;
 
@@ -71,8 +73,10 @@ dijsktra_result modified_dijsktra(Data &data,
 
         for (auto [neighbor, edge_cost, edge_length] : data.adjacency[current_node])
         {
-            int new_cost = cost + edge_cost;
-            int new_length = length + ((visited[neighbor])? 0 : edge_length);
+            const int new_cost = cost + edge_cost;
+            const bool is_street_visited = ((visited.count({current_node, neighbor}) +
+                    visited.count({neighbor, current_node})) != 0);
+            const int new_length = length + ((is_street_visited)? 0 : edge_length);
 
             if (new_cost <= data.total_time)
             {
@@ -80,7 +84,7 @@ dijsktra_result modified_dijsktra(Data &data,
                 path_copy.push_back(neighbor);
 
                 auto visited_copy = visited;
-                visited_copy[neighbor] = true;
+                visited_copy.insert({current_node, neighbor});
 
                 pqueue.emplace(neighbor, new_cost, new_length, path_copy, visited_copy);
 
@@ -102,19 +106,18 @@ dijsktra_result modified_dijsktra(Data &data,
 std::vector<std::vector<int>> solve(Data &data)
 {
     std::vector<std::vector<int>> car_paths;
-    std::bitset<MAX_VERTICES> visited_overall;
-    visited_overall[data.starting_junction] = true;
+    std::set<std::pair<int, int>> visited_overall;
     unsigned long long total_length = 0;
 
-    std::array<int, MAX_CARS> timeout_minutes = {3, 3, 3, 4, 4, 4, 5, 6};
+//    std::array<int, MAX_CARS> timeout_minutes = {3, 3, 3, 4, 4, 4, 5, 6};
     for (int car_index = 0; car_index < data.nr_cars; ++car_index)
     {
-        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, timeout_minutes[car_index]);
+        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, 1);
 
         std::cout << "Obtained a path of length " << path_length << " for car " << car_index << '\n';
 
         // Updating the visited nodes(junctions)
-        visited_overall |= visited;
+        visited_overall.insert(visited.begin(), visited.end());
 
         total_length += path_length;
 
