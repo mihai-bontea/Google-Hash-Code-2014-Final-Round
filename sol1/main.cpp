@@ -58,7 +58,7 @@ dijsktra_result modified_dijsktra(Data &data,
     auto start_time = std::chrono::steady_clock::now();
     while (!pqueue.empty())
     {
-        const auto& [current_node, cost, length, path, visited] = pqueue.top();
+        const auto [current_node, cost, length, path, visited] = pqueue.top();
         pqueue.pop();
 
         if (length > best_path_length)
@@ -83,6 +83,7 @@ dijsktra_result modified_dijsktra(Data &data,
                 visited_copy[neighbor] = true;
 
                 pqueue.emplace(neighbor, new_cost, new_length, path_copy, visited_copy);
+
             }
         }
 
@@ -102,6 +103,7 @@ std::vector<std::vector<int>> solve(Data &data)
 {
     std::vector<std::vector<int>> car_paths;
     std::bitset<MAX_VERTICES> visited_overall;
+    visited_overall[data.starting_junction] = true;
     unsigned long long total_length = 0;
 
 //    std::array<int, MAX_CARS> timeout_times = {3, 3, 3, 4, 4, 4, 5, 6};
@@ -114,6 +116,10 @@ std::vector<std::vector<int>> solve(Data &data)
         // Updating the visited nodes(junctions)
         visited_overall |= visited;
 
+        std::cout << "Elems in path: " << path.size() << std::endl;
+        for (int junction : path)
+            assert(visited_overall[junction] == true);
+
         total_length += path_length;
 
         car_paths.push_back(path);
@@ -125,10 +131,13 @@ std::vector<std::vector<int>> solve(Data &data)
 int main()
 {
     const std::string input_filename = "../../hashcode_2014_final_round.in";
+    const std::string output_filename = "../../hashcode_2014_final_round.out";
+
     Data data(input_filename);
 
     std::cout << "Read data, we got " << data.nr_junctions << " " << data.nr_streets << std::endl;
 
-    auto result = solve(data);
+    const auto result = solve(data);
+    Data::write_to_file(output_filename, result);
     return 0;
 }
