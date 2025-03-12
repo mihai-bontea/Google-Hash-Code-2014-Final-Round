@@ -109,10 +109,10 @@ std::vector<std::vector<int>> solve(Data &data)
     std::set<std::pair<int, int>> visited_overall;
     unsigned long long total_length = 0;
 
-//    std::array<int, MAX_CARS> timeout_minutes = {3, 3, 3, 4, 4, 4, 5, 6};
+    std::array<int, MAX_CARS> timeout_minutes = {3, 3, 3, 4, 4, 4, 5, 6};
     for (int car_index = 0; car_index < data.nr_cars; ++car_index)
     {
-        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, 1);
+        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, timeout_minutes[car_index]);
 
         std::cout << "Obtained a path of length " << path_length << " for car " << car_index << '\n';
 
