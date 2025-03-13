@@ -1,4 +1,3 @@
-
 input_file = "hashcode_2014_final_round.in"
 output_file = "hashcode_2014_final_round.out"
 
@@ -40,7 +39,3 @@ with open(input_file, "r") as in_file:
         score += streets[street][1]
 
     print(f"Total score: {score}")
-    
-
-
-            
