@@ -43,8 +43,6 @@ void randomize(std::vector<int>& elems)
     std::shuffle(elems.begin(), elems.end(), g);
 }
 
-
-
 dijsktra_result modified_dijsktra(Data &data,
                                   std::set<std::pair<int, int>>& visited_overall,
                                   int timeout_minutes)
