@@ -35,7 +35,7 @@ def generate_svg(filename, junction_coords, streets, car_to_streets):
         line_elem.setAttribute("x2", str((end_coords[1] - miny) * scale))
         line_elem.setAttribute("y2", str((maxx - end_coords[0]) * scale))
         
-        car_index = get_car_index_of_street_(street, car_to_streets)
+        car_index = get_car_index_of_street(street, car_to_streets)
         if car_index:
             line_elem.setAttribute("stroke", colors[car_index])
             line_elem.setAttribute("stroke-width", "1")
@@ -49,7 +49,7 @@ def generate_svg(filename, junction_coords, streets, car_to_streets):
         f.write(doc.toprettyxml(indent="  "))
 
 
-def get_car_index_of_street_(street, car_to_streets):
+def get_car_index_of_street(street, car_to_streets):
     for car_index in car_to_streets.keys():
         if street in car_to_streets[car_index]:
             return car_index
@@ -85,7 +85,3 @@ with open(input_file, "r") as in_file:
                 car_to_streets[car_index].add((node_a, node_b))
 
         generate_svg("paths", coords, streets, car_to_streets)
-    
-
-
-            
