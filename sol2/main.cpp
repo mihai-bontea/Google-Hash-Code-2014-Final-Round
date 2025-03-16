@@ -7,6 +7,7 @@
 #include <limits>
 #include <cassert>
 #include <algorithm>
+#include <chrono>
 
 #include "Data.h"
 
@@ -78,6 +79,7 @@ simple_path dijkstra(Data& data, int start, int end) {
     }
 
     assert(distances[end] != std::numeric_limits<int>::max());
+    assert(distances[end] <= data.total_time);
 
     std::vector<int> path;
     for (int at = end; at != start; at = predecessors[at])
@@ -89,35 +91,125 @@ simple_path dijkstra(Data& data, int start, int end) {
     return {distances[end], path};
 }
 
+//void process_starting_positions(Data& data)
+//{
+//    std::array<int, MAX_CARS> starting_junctions = {10210, 2509, 1532, 1331, 1720, 3057, 8762, 6511};
+//    for (int car_index = 0; car_index < data.nr_cars; ++car_index)
+//    {
+//        auto [cost, path] = dijkstra(data, 0, starting_junctions[car_index]);
+//        std::cout << "For car " << car_index << " the cost is " << cost << std::endl;
+//        std::cout<< "the nr of junctions in path is " << path.size() << std::endl;
+//    }
+//
+//}
+
+dijsktra_result modified_dijsktra(Data &data,
+                                  std::set<std::pair<int, int>>& visited_overall,
+                                  int init_cost,
+                                  int init_length,
+                                  int timeout_minutes)
+{
+    std::vector<int> best_path;
+    int best_path_length = 0, best_path_cost = 0;
+    std::set<std::pair<int, int>> best_path_visited;
+
+    std::priority_queue<PathDescription> pqueue;
+
+    pqueue.emplace(data.starting_junction, init_cost, init_length, std::vector{data.starting_junction}, visited_overall);
+
+    auto start_time = std::chrono::steady_clock::now();
+    while (!pqueue.empty())
+    {
+        const auto [current_node, cost, length, path, visited] = pqueue.top();
+        pqueue.pop();
+
+        if (length > best_path_length)
+        {
+            best_path_length = length;
+            best_path_cost = cost;
+            best_path = path;
+            best_path_visited = visited;
+        }
+
+        for (auto [neighbor, edge_cost, edge_length] : data.adjacency[current_node])
+        {
+            const int new_cost = cost + edge_cost;
+            const bool is_street_visited = ((visited.count({current_node, neighbor}) +
+                                             visited.count({neighbor, current_node})) != 0);
+            const int new_length = length + ((is_street_visited)? 0 : edge_length);
+
+            if (new_cost <= data.total_time)
+            {
+                auto path_copy = path;
+                path_copy.push_back(neighbor);
+
+                auto visited_copy = visited;
+                visited_copy.insert({current_node, neighbor});
+
+                pqueue.emplace(neighbor, new_cost, new_length, path_copy, visited_copy);
+
+            }
+        }
+
+        auto elapsed = std::chrono::steady_clock::now() - start_time;
+        if (std::chrono::duration_cast<std::chrono::minutes>(elapsed).count() >= timeout_minutes)
+        {
+            std::cout << "Timeout reached! Stopping..." << std::endl;
+            break;
+        }
+    }
+
+    assert(best_path_cost <= data.total_time);
+    return {best_path_length, best_path, best_path_visited};
+}
+
+
+
 std::vector<std::vector<int>> solve(Data &data)
 {
+    std::vector<std::vector<int>> car_paths;
+    std::set<std::pair<int, int>> visited_overall;
+    unsigned long long total_length = 0;
+
+    std::array<int, MAX_CARS> timeout_minutes = {3, 3, 3, 4, 4, 4, 5, 6};
     std::array<int, MAX_CARS> starting_junctions = {10210, 2509, 1532, 1331, 1720, 3057, 8762, 6511};
     for (int car_index = 0; car_index < data.nr_cars; ++car_index)
     {
-        auto [distance, path] = dijkstra(data, 0, starting_junctions[car_index]);
-        std::cout << "For car " << car_index << " the distance is " << distance << std::endl;
-    }
+        auto [init_cost, init_path] = dijkstra(data, 0, starting_junctions[car_index]);
+        int init_length = 0;
 
-    std::vector<std::vector<int>> car_paths;
-//    std::set<std::pair<int, int>> visited_overall;
-//    unsigned long long total_length = 0;
-//
-//    std::array<int, MAX_CARS> timeout_minutes = {3, 3, 3, 4, 4, 4, 5, 6};
-//    for (int car_index = 0; car_index < data.nr_cars; ++car_index)
-//    {
-//        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, timeout_minutes[car_index]);
-//
-//        std::cout << "Obtained a path of length " << path_length << " for car " << car_index << '\n';
-//
-//        // Updating the visited nodes(junctions)
-//        visited_overall.insert(visited.begin(), visited.end());
-//
-//        total_length += path_length;
-//
-//        if (!path.empty())
-//            car_paths.push_back(path);
-//    }
-//    std::cout << "Total score is " << total_length << '\n';
+        // Determine length, and visited
+        for (int path_index = 0; path_index < init_path.size() - 1; ++path_index)
+        {
+            int node_a = init_path[path_index];
+            int node_b = init_path[path_index + 1];
+
+            for (auto edge : data.adjacency[node_a])
+                if (edge.neighbor == node_b)
+                {
+                    auto it = visited_overall.find({node_a, node_b});
+                    if (it == visited_overall.end())
+                    {
+                        init_length += edge.length;
+                        visited_overall.emplace(node_a, node_b);
+                    }
+                    break;
+                }
+        }
+
+        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, init_cost, init_length, 1);
+
+        std::cout << "Obtained a path of length " << path_length << " for car " << car_index << '\n';
+
+        // Updating the visited nodes(junctions)
+        visited_overall.insert(visited.begin(), visited.end());
+
+        total_length += path_length;
+
+        if (!path.empty())
+            car_paths.push_back(path);
+    }
+    std::cout << "Total score is " << total_length << '\n';
     return car_paths;
 }
 
