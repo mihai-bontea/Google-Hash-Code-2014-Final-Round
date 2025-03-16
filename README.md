@@ -15,3 +15,12 @@ so a timer has been added to the main function. Generally, the longer the timer,
 ![Image](https://github.com/user-attachments/assets/8d38fa5c-228d-47ef-b6b3-4aaecd3e891d)
 
 **Total score: 1426334**
+
+## Solution 2
+
+Similar to solution 1, but instead of starting the search from the initial junction for each car, **nr_cars** junctions are randomly chosen, such that the distance between
+them is maximal. Then, the shortest path to these junctions is computed from the starting junction, and subsequently, the algorithm from solution 1 begins. This way, the cars have more room to search for the best path with less overlap. This results in a slightly better score.
+
+![Image](https://github.com/user-attachments/assets/affbf0d9-1b04-4ffc-ae82-9f916e777866)
+
+**Total score: 1613255**

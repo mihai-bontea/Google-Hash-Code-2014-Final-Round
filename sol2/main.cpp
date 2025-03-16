@@ -107,6 +107,8 @@ dijsktra_result modified_dijsktra(Data &data,
                                   std::set<std::pair<int, int>>& visited_overall,
                                   int init_cost,
                                   int init_length,
+                                  int starting_junction,
+                                  std::vector<int> init_path,
                                   int timeout_minutes)
 {
     std::vector<int> best_path;
@@ -115,7 +117,7 @@ dijsktra_result modified_dijsktra(Data &data,
 
     std::priority_queue<PathDescription> pqueue;
 
-    pqueue.emplace(data.starting_junction, init_cost, init_length, std::vector{data.starting_junction}, visited_overall);
+    pqueue.emplace(starting_junction, init_cost, init_length, init_path, visited_overall);
 
     auto start_time = std::chrono::steady_clock::now();
     while (!pqueue.empty())
@@ -188,6 +190,7 @@ std::vector<std::vector<int>> solve(Data &data)
                 if (edge.neighbor == node_b)
                 {
                     auto it = visited_overall.find({node_a, node_b});
+                    // Also add iterator for node_b, node_a
                     if (it == visited_overall.end())
                     {
                         init_length += edge.length;
@@ -197,11 +200,18 @@ std::vector<std::vector<int>> solve(Data &data)
                 }
         }
 
-        auto [path_length, path, visited] = modified_dijsktra(data, visited_overall, init_cost, init_length, 1);
+        auto [path_length, path, visited] = modified_dijsktra(data,
+                                                              visited_overall,
+                                                              init_cost,
+                                                              init_length,
+                                                              init_path[init_path.size() - 1],
+                                                              init_path,
+                                                              timeout_minutes[car_index]);
 
         std::cout << "Obtained a path of length " << path_length << " for car " << car_index << '\n';
 
         // Updating the visited nodes(junctions)
+        // Skip operation if last car
         visited_overall.insert(visited.begin(), visited.end());
 
         total_length += path_length;
