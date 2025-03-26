@@ -105,21 +105,41 @@ private:
                 next_vertex[vertex_id][edge.neighbor] = edge.neighbor;
             }
         }
-        const int nr_threads = 11;
-        int chunk_size = nr_junctions / nr_threads;
-        BS::thread_pool pool(nr_threads);
+//        const int nr_threads = 11;
+//        int chunk_size = nr_junctions / nr_threads;
+//        BS::thread_pool pool(nr_threads);
+//        for (int k = 0; k < nr_junctions; ++k)
+//        {
+//            std::vector<std::future<void>> worker_futures;
+//
+//            for (int t = 0; t < nr_threads; ++t)
+//            {
+//                int start = t * chunk_size;
+//                int end = (t == nr_threads - 1)? nr_junctions : (t + 1) * chunk_size;
+//                worker_futures.push_back(pool.submit_task([&](){return floyd_warshall_worker(start, end, k);}));
+//                std::cout << "Making future for interval [" << start << ", " << end << "]\n";
+//            }
+//            for (auto& future : worker_futures)
+//                future.get();
+//        }
+
+        // main floyd-warshall
         for (int k = 0; k < nr_junctions; ++k)
         {
-            std::vector<std::future<void>> worker_futures;
-
-            for (int t = 0; t < nr_threads; ++t)
+            for (int i = 0; i < nr_junctions; ++i)
             {
-                int start = t * chunk_size;
-                int end = (t == nr_threads - 1)? nr_junctions : (t + 1) * chunk_size;
-                worker_futures.push_back(pool.submit_task([&](){return floyd_warshall_worker(start, end, k);}));
+                for (int j = 0; j < nr_junctions; ++j)
+                {
+                    if (shortest_dist[i][k] != INF && shortest_dist[k][j] != INF)
+                    {
+                        if (shortest_dist[i][j] > shortest_dist[i][k] + shortest_dist[k][j])
+                        {
+                            shortest_dist[i][j] = shortest_dist[i][k] + shortest_dist[k][j];
+                            next_vertex[i][j] = next_vertex[i][k];
+                        }
+                    }
+                }
             }
-            for (auto& future : worker_futures)
-                future.get();
         }
 
         std::cout << "Finished computing shortest distances, writing results to file...\n";
