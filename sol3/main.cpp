@@ -40,7 +40,7 @@ int main()
     const std::string output_filename = "../../hashcode_2014_final_round.out";
 
     Data data(input_filename);
-    data.make_eulerian();
+//    data.make_eulerian();
 
     std::cout << "Read data, we got " << data.nr_junctions << " " << data.nr_streets << std::endl;
 
