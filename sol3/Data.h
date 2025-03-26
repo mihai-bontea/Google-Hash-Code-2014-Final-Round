@@ -8,6 +8,8 @@
 #include <iostream>
 #include <limits>
 
+#include "BS_thread_pool.hpp"
+
 #define MAX_VERTICES 11348
 //#define MAX_VERTICES 11
 #define MAX_CARS 8
@@ -31,6 +33,7 @@ struct Data
     static std::array<std::vector<Edge>, MAX_VERTICES> adjacency;
     static std::array<std::array<int, MAX_VERTICES>, MAX_VERTICES> shortest_dist;
     static std::array<std::array<int, MAX_VERTICES>, MAX_VERTICES> next_vertex;
+    static std::string floyd_warshall_filename;
 
     explicit Data(const std::string& filename)
     {
@@ -79,6 +82,14 @@ struct Data
 private:
     void floyd_warshall()
     {
+        std::ifstream fin(floyd_warshall_filename);
+        if (fin)
+        {
+            std::cout << "Shortest distances already computed, reading from file...\n";
+            read_precomputed_distances_from_file(fin);
+            return;
+        }
+
         // Initializing the distance and next_vertex matrices
         for (int vertex_id = 0; vertex_id < nr_junctions; ++vertex_id)
         {
@@ -94,23 +105,71 @@ private:
                 next_vertex[vertex_id][edge.neighbor] = edge.neighbor;
             }
         }
-        // main floyd-warshall
+        const int nr_threads = 11;
+        int chunk_size = nr_junctions / nr_threads;
+        BS::thread_pool pool(nr_threads);
         for (int k = 0; k < nr_junctions; ++k)
         {
-            for (int i = 0; i < nr_junctions; ++i)
+            std::vector<std::future<void>> worker_futures;
+
+            for (int t = 0; t < nr_threads; ++t)
             {
-                for (int j = 0; j < nr_junctions; ++j)
+                int start = t * chunk_size;
+                int end = (t == nr_threads - 1)? nr_junctions : (t + 1) * chunk_size;
+                worker_futures.push_back(pool.submit_task([&](){return floyd_warshall_worker(start, end, k);}));
+            }
+            for (auto& future : worker_futures)
+                future.get();
+        }
+
+        std::cout << "Finished computing shortest distances, writing results to file...\n";
+        std::ofstream fout(floyd_warshall_filename);
+        write_distances_to_file(fout);
+    }
+
+    void floyd_warshall_worker(int start, int end, int k)
+    {
+        for (int i = start; i < end; i++)
+        {
+            for (int j = 0; j < nr_junctions; j++)
+            {
+                if (shortest_dist[i][k] != INF && shortest_dist[k][j] != INF)
                 {
-                    if (shortest_dist[i][k] != INF && shortest_dist[k][j] != INF)
+                    if (shortest_dist[i][j] > shortest_dist[i][k] + shortest_dist[k][j])
                     {
-                        if (shortest_dist[i][j] > shortest_dist[i][k] + shortest_dist[k][j])
-                        {
-                            shortest_dist[i][j] = shortest_dist[i][k] + shortest_dist[k][j];
-                            next_vertex[i][j] = next_vertex[i][k];
-                        }
+                        shortest_dist[i][j] = shortest_dist[i][k] + shortest_dist[k][j];
+                        next_vertex[i][j] = next_vertex[i][k];
                     }
                 }
             }
+        }
+    }
+
+    void read_precomputed_distances_from_file(std::ifstream& fin)
+    {
+        for (int i = 0; i < nr_junctions; ++i)
+            for (int j = 0; j < nr_junctions; ++j)
+                fin >> shortest_dist[i][j];
+
+        for (int i = 0; i < nr_junctions; ++i)
+            for (int j = 0; j < nr_junctions; ++j)
+                fin >> next_vertex[i][j];
+    }
+
+    void write_distances_to_file(std::ofstream& fout)
+    {
+        for (int i = 0; i < nr_junctions; ++i)
+        {
+            for (int j = 0; j < nr_junctions; ++j)
+                fout << shortest_dist[i][j] << " ";
+            fout << '\n';
+        }
+        fout << '\n';
+        for (int i = 0; i < nr_junctions; ++i)
+        {
+            for (int j = 0; j < nr_junctions; ++j)
+                fout << next_vertex[i][j] << " ";
+            fout << '\n';
         }
     }
 };
@@ -118,3 +177,4 @@ private:
 std::array<std::vector<Edge>, MAX_VERTICES> Data::adjacency;
 std::array<std::array<int, MAX_VERTICES>, MAX_VERTICES> Data::shortest_dist;
 std::array<std::array<int, MAX_VERTICES>, MAX_VERTICES> Data::next_vertex;
+std::string Data::floyd_warshall_filename = "../shortest_distances.txt";
