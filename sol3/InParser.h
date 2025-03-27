@@ -35,7 +35,8 @@ public:
 
     ~InParser()
     {
-        delete[] buffer;
+        if (fin != nullptr)
+            delete[] buffer;
     }
 
     bool file_exists() const
