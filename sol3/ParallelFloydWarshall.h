@@ -3,7 +3,7 @@
 #include <fstream>
 
 #include "BS_thread_pool.hpp"
-//#include "Data.h"
+#include "InParser.h"
 
 #define MAX_VERTICES 11348
 #define NO_PATH -1
@@ -37,11 +37,19 @@ private:
 
     void floyd_warshall()
     {
-        std::ifstream fin(floyd_warshall_filename);
-        if (fin)
+//        std::ifstream fin(floyd_warshall_filename);
+        InParser fin(floyd_warshall_filename.c_str());
+        if (fin.file_exists())
+//        if (fin)
         {
             std::cout << "Shortest distances already computed, reading from file...\n";
+            auto start = std::chrono::high_resolution_clock::now();
             read_precomputed_distances_from_file(fin);
+
+            auto stop = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            std::cout << "File read in: " << duration.count() << " ms" << std::endl;
+
             return;
         }
 
@@ -125,7 +133,8 @@ private:
         }
     }
 
-    void read_precomputed_distances_from_file(std::ifstream& fin)
+    void read_precomputed_distances_from_file(InParser& fin)
+//    void read_precomputed_distances_from_file(std::ifstream& fin)
     {
         for (int i = 0; i < MAX_VERTICES; ++i)
             for (int j = 0; j < MAX_VERTICES; ++j)
