@@ -9,16 +9,14 @@
 #include <limits>
 
 #include "ParallelFloydWarshall.h"
-
-#define MAX_VERTICES 11348
 #define MAX_CARS 8
 
 struct Data
 {
     int nr_junctions, nr_streets, total_time, nr_cars, starting_junction;
-    static std::array<std::vector<Edge>, MAX_VERTICES> adjacency;
-    static std::array<std::array<int, MAX_VERTICES>, MAX_VERTICES> shortest_dist;
-    static std::array<std::array<int, MAX_VERTICES>, MAX_VERTICES> next_vertex;
+    static AdjacencyList adjacency;
+    static Matrix shortest_dist;
+    static Matrix next_vertex;
 
     explicit Data(const std::string& filename)
     {
@@ -67,6 +65,6 @@ struct Data
     }
 };
 
-std::array<std::vector<Edge>, MAX_VERTICES> Data::adjacency;
-std::array<std::array<int, MAX_VERTICES>, MAX_VERTICES> Data::shortest_dist;
-std::array<std::array<int, MAX_VERTICES>, MAX_VERTICES> Data::next_vertex;
+AdjacencyList Data::adjacency;
+Matrix Data::shortest_dist;
+Matrix Data::next_vertex;
