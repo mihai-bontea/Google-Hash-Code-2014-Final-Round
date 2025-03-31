@@ -2,11 +2,6 @@
 #include <vector>
 #include <algorithm>
 
-std::vector<std::vector<int>> combine_adjacency_lists()
-{
-
-}
-
 std::vector<int> get_eulerian_circuit(std::vector<std::vector<int>> &adjacency, int starting_vertex) {
     int n = adjacency.size();
 

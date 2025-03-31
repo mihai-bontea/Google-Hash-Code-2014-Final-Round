@@ -10,6 +10,7 @@
 
 #include "Data.h"
 #include "HungarianAlgorithm.h"
+#include "Hierholzer.h"
 
 struct PathDescription
 {
@@ -35,7 +36,7 @@ struct PathDescription
     }
 };
 
-void call_hungarian_alg(Data& data)
+std::vector<std::pair<int, int>> call_hungarian_alg(Data& data)
 {
     // Calculate in-degree for each vertex
     std::map<int, int> vertex_to_in_degree;
@@ -126,6 +127,27 @@ void call_hungarian_alg(Data& data)
 
     // Now to obtain the worker->job path for each matching
     // imaginary_edge = {worker_id, job_id} : path
+    return min_assignment;
+}
+
+std::vector<std::vector<int>> combine_adjacency_lists(Data& data, const std::vector<std::pair<int, int>>& matchings)
+{
+    std::vector<std::vector<int>> adjacency(data.nr_junctions);
+
+    // Insert the real edges
+    for (int vertex_id = 0; vertex_id < data.nr_junctions; ++vertex_id)
+    {
+        for (auto& edge : data.adjacency[vertex_id])
+            adjacency[vertex_id].push_back(edge.neighbor);
+    }
+    // Insert the 'imaginary' edges
+    std::set<std::pair<int, int>> imaginary_edges;
+
+    for (auto& [node_a, node_b] : matchings)
+    {
+        adjacency[node_a].push_back(node_b);
+    }
+    return adjacency;
 }
 
 int main()
@@ -134,7 +156,9 @@ int main()
     const std::string output_filename = "../../hashcode_2014_final_round.out";
 
     Data data(input_filename);
-    call_hungarian_alg(data);
+    auto perfect_match = call_hungarian_alg(data);
+    auto adj_list = combine_adjacency_lists(data, perfect_match);
+    auto eulerian_circuit = get_eulerian_circuit(adj_list, data.starting_junction);
 
 //    data.make_eulerian();
 
