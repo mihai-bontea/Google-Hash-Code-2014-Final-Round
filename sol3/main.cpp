@@ -125,6 +125,7 @@ void call_hungarian_alg(Data& data)
     cout << min_assignment.size() << std::endl;
 
     // Now to obtain the worker->job path for each matching
+    // imaginary_edge = {worker_id, job_id} : path
 }
 
 int main()
