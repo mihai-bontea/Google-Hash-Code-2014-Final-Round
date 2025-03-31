@@ -13,7 +13,7 @@ using namespace std;
 
 
 
-void hungarianAlgorithm(vector<vector<int>>& cost)
+std::vector<std::pair<int, int>> hungarianAlgorithm(vector<vector<int>>& cost)
 {
     int n = cost.size();
     vector<int> u(n, 0), v(n, 0), p(n, 0), way(n, 0);
@@ -64,10 +64,13 @@ void hungarianAlgorithm(vector<vector<int>>& cost)
         } while (j0);
     }
 
-    for (int j = 1; j < n; ++j)
+    std::vector<std::pair<int, int>> assignment;
+    for (int j = 0; j < n; ++j)
     {
-        cout << "Agent " << p[j] << " assigned to task " << j << endl;
+//        cout << "Agent " << p[j] << " assigned to task " << j << endl;
+        assignment.emplace_back(p[j], j);
     }
+    return assignment;
 }
 
 //int main() {

@@ -86,6 +86,45 @@ void call_hungarian_alg(Data& data)
     // or give as input 2 vectors, one with workers(duplicated) and jobs(also duplicated)
     // Then have it return the ideal matchmaking
     // also have vertex ID : index in the matrix?
+
+//    int worker_index = 0;
+//    for (const auto& [in_excess_vertex_id, in_excess] : excess_in)
+//    {
+//        for (int i = 0; i < in_excess; ++i)
+//        {
+//            // Memo
+//            worker_to_vertex_id[worker_index] = in_excess_vertex_id;
+//
+//        }
+//    }
+    std::vector<int> worker_to_vertex_id, job_to_vertex_id;
+
+    for (const auto& [vertex_id, excess] : excess_in)
+        for (int times = 0; times < excess; ++times)
+            worker_to_vertex_id.push_back(vertex_id);
+
+    for (const auto& [vertex_id, excess] : excess_out)
+        for (int times = 0; times < excess; ++times)
+            job_to_vertex_id.push_back(vertex_id);
+
+    std::vector<std::vector<int>> costs;
+    // TODO
+    for (int worker_id = 0; worker_id < worker_to_vertex_id.size(); ++worker_id)
+    {
+        std::vector<int> tmp;
+        const int vertex_id = worker_to_vertex_id[worker_id];
+        for (int job_id = 0; job_id < job_to_vertex_id.size(); ++job_id)
+        {
+            const int neighbor_id = job_to_vertex_id[job_id];
+            tmp.push_back(data.shortest_dist[vertex_id][neighbor_id]);
+        }
+        costs.push_back(tmp);
+    }
+    std::cout << "Calling hungarian algorithm...\n";
+    auto min_assignment = hungarianAlgorithm(costs);
+    cout << min_assignment.size() << std::endl;
+
+    // Now to obtain the worker->job path for each matching
 }
 
 int main()
