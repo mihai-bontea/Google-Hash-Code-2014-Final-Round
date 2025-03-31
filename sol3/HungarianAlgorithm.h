@@ -46,6 +46,7 @@ std::vector<std::pair<int, int>> hungarianAlgorithm(vector<vector<int>>& cost)
                     }
                 }
             }
+            // Parallel?
             for (int j = 0; j < n; ++j)
             {
                 if (used[j])
